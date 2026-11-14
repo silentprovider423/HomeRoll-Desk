@@ -166,30 +166,34 @@ struct DuplicatesOverview: View {
 @MainActor
 enum PeopleActions {
     static func menu(_ p: PersonDTO, lib: Library) -> some View {
-        let w = AccountStore.shared.canWrite
-        return Group {
-            Button(p.name.isEmpty ? "Add Name…" : "Rename…") {
-                if let n = Menus.ask(p.name.isEmpty ? "Who Is This?" : "Rename Person", info: "", value: p.name) {
-                    Task { await update(p, ["name": n], lib) }
-                }
-            }.disabled(!w)
-            Button((p.isFavorite ?? false) ? "Unfavorite" : "Favorite") {
-                Task { await update(p, ["isFavorite": !(p.isFavorite ?? false)], lib) }
-            }.disabled(!w)
-            Menu("Merge with") {
-                ForEach(lib.people.filter { $0.id != p.id && !$0.name.isEmpty }) { o in
-                    Button(o.name) { Task { await merge(p, into: o, lib) } }
-                }
-            }.disabled(!w)
-            Divider()
-            Button("Hide from People") { Task { await update(p, ["isHidden": true], lib) } }.disabled(!w)
-        }
+        PersonContextMenu(person: p, lib: lib)
     }
 
     static func update(_ p: PersonDTO, _ fields: [String: Any], _ lib: Library) async {
+        var updated = lib.people.first(where: { $0.id == p.id }) ?? p
+        if let fav = fields["isFavorite"] as? Bool {
+            updated.isFavorite = fav
+        }
+        if let name = fields["name"] as? String {
+            updated = PersonDTO(id: updated.id, name: name, isHidden: updated.isHidden, isFavorite: updated.isFavorite, birthDate: updated.birthDate)
+        }
+        if let hidden = fields["isHidden"] as? Bool {
+            updated = PersonDTO(id: updated.id, name: updated.name, isHidden: hidden, isFavorite: updated.isFavorite, birthDate: updated.birthDate)
+        }
+        lib.updatePerson(updated)
+
         let api = ImmichClient.shared, body = api.json(fields)
-        do { try await api.raw("people/\(p.id)", method: "PUT", body: body); await lib.loadPeople() }
-        catch { lib.error = error.localizedDescription }
+        do {
+            let data = try await api.raw("people/\(p.id)", method: "PUT", body: body)
+            if let serverPerson = try? ImmichClient.shared.decoder.decode(PersonDTO.self, from: data) {
+                lib.updatePerson(serverPerson)
+            }
+            await lib.loadPeople()
+        }
+        catch {
+            lib.error = error.localizedDescription
+            await lib.loadPeople()
+        }
     }
 
     static func merge(_ p: PersonDTO, into o: PersonDTO, _ lib: Library) async {
@@ -200,6 +204,38 @@ enum PeopleActions {
         guard a.runModal() == .alertFirstButtonReturn else { return }
         do { try await ImmichClient.shared.mergePeople(into: o.id, [p.id]); await lib.loadPeople() }
         catch { lib.error = error.localizedDescription }
+    }
+}
+
+struct PersonContextMenu: View {
+    let person: PersonDTO
+    @Bindable var lib: Library
+
+    private var current: PersonDTO {
+        lib.people.first(where: { $0.id == person.id }) ?? person
+    }
+
+    var body: some View {
+        let p = current
+        let w = AccountStore.shared.canWrite
+        let isFav = p.isFavorite ?? false
+        Group {
+            Button(p.name.isEmpty ? "Add Name…" : "Rename…") {
+                if let n = Menus.ask(p.name.isEmpty ? "Who Is This?" : "Rename Person", info: "", value: p.name) {
+                    Task { await PeopleActions.update(p, ["name": n], lib) }
+                }
+            }.disabled(!w)
+            Button(isFav ? "Unfavorite" : "Favorite") {
+                Task { await PeopleActions.update(p, ["isFavorite": !isFav], lib) }
+            }.disabled(!w)
+            Menu("Merge with") {
+                ForEach(lib.people.filter { $0.id != p.id && !$0.name.isEmpty }) { o in
+                    Button(o.name) { Task { await PeopleActions.merge(p, into: o, lib) } }
+                }
+            }.disabled(!w)
+            Divider()
+            Button("Hide from People") { Task { await PeopleActions.update(p, ["isHidden": true], lib) } }.disabled(!w)
+        }
     }
 }
 

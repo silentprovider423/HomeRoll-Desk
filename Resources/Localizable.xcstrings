@@ -1062,6 +1062,16 @@
         }
       }
     },
+    "Auf Karte zeigen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show on map"
+          }
+        }
+      }
+    },
     "Auf deinem Server bleibt alles erhalten.": {
       "localizations": {
         "en": {
@@ -2304,6 +2314,16 @@
         }
       }
     },
+    "Fotos in der Nähe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nearby Photos"
+          }
+        }
+      }
+    },
     "Fotos sichern": {
       "localizations": {
         "en": {
@@ -2541,6 +2561,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cozy"
+          }
+        }
+      }
+    },
+    "Gesicht": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Face"
           }
         }
       }
@@ -5117,6 +5147,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Unnamed"
+          }
+        }
+      }
+    },
+    "Unbenannte Person": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unnamed Person"
           }
         }
       }

@@ -445,6 +445,11 @@ final class ImmichClient: NSObject, URLSessionDelegate, @unchecked Sendable {
               let r = try? decoder.decode(R.self, from: data) else { return nil }
         return r.faces
     }
+    /// Alle erkannten Gesichter eines Fotos (Immich: GET /faces?id={assetId})
+    func faces(_ assetId: String) async -> [AssetFaceDTO] {
+        (try? await request("faces", query: ["id": assetId])) ?? []
+    }
+
     /// „Nicht diese Person“ (REA: PXPhotoKitNotThisPersonActionPerformer): Immich kennt kein Lösen eines Gesichts –
     /// wie die Immich-Weboberfläche kommt das Gesicht zu einer neuen, unbenannten Person (leere räumt Immich selbst weg).
     func notThisPerson(asset: String, person: String) async throws {

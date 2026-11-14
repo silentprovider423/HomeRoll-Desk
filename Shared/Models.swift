@@ -180,6 +180,17 @@ struct PeopleDTO: Decodable {
     let total: Int
 }
 
+struct AssetFaceDTO: Decodable, Identifiable, Hashable {
+    let id: String
+    let boundingBoxX1: Double?
+    let boundingBoxY1: Double?
+    let boundingBoxX2: Double?
+    let boundingBoxY2: Double?
+    let imageWidth: Double?
+    let imageHeight: Double?
+    let person: PersonDTO?
+}
+
 struct MapMarkerDTO: Decodable, Identifiable {
     let id: String
     let lat: Double

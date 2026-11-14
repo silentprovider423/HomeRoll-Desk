@@ -369,7 +369,35 @@ final class Library {
     /// Benannte zuerst (wie Fotos), unbenannte dahinter.
     func loadPeople() async {
         let p = (try? await api.people()) ?? []
-        people = p.filter { !$0.name.isEmpty } + p.filter { $0.name.isEmpty }
+        var merged = p
+        for local in people {
+            if let idx = merged.firstIndex(where: { $0.id == local.id }) {
+                if merged[idx].isFavorite == nil {
+                    merged[idx].isFavorite = local.isFavorite
+                }
+            } else {
+                merged.append(local)
+            }
+        }
+        people = merged.filter { !$0.name.isEmpty } + merged.filter { $0.name.isEmpty }
+    }
+
+    func updatePerson(_ p: PersonDTO) {
+        if let idx = people.firstIndex(where: { $0.id == p.id }) {
+            var curr = people[idx]
+            if !p.name.isEmpty {
+                curr = PersonDTO(id: curr.id, name: p.name, isHidden: curr.isHidden, isFavorite: curr.isFavorite, birthDate: curr.birthDate)
+            }
+            if let fav = p.isFavorite {
+                curr.isFavorite = fav
+            }
+            if let hidden = p.isHidden {
+                curr = PersonDTO(id: curr.id, name: curr.name, isHidden: hidden, isFavorite: curr.isFavorite, birthDate: curr.birthDate)
+            }
+            people[idx] = curr
+        } else {
+            people.append(p)
+        }
     }
 
     private func rebuildIndex() {
